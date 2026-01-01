@@ -19,13 +19,26 @@ interface CardOptions {
   showProfile?: boolean;
 }
 
-const FONT_FAMILY = "'Google Sans Flex', 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT_FAMILY = "'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif";
 
 function formatDateShort(dateStr: string): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${months[date.getMonth()]} ${date.getDate()}`;
+}
+
+function formatDateRange(startDateStr: string, endDateStr: string): string {
+  if (!startDateStr || !endDateStr) return '';
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  if (startDate.getFullYear() === endDate.getFullYear()) {
+    return `${months[startDate.getMonth()]} ${startDate.getDate()} - ${months[endDate.getMonth()]} ${endDate.getDate()}, ${endDate.getFullYear()}`;
+  } else {
+    return `${months[startDate.getMonth()]} ${startDate.getDate()}, ${startDate.getFullYear()} - ${months[endDate.getMonth()]} ${endDate.getDate()}, ${endDate.getFullYear()}`;
+  }
 }
 
 function formatDateFull(dateStr: string): string {
@@ -80,11 +93,32 @@ function calculateGrade(stats: GitHubStats): { grade: string; color: string } {
 }
 
 function renderHeaderSection(stats: GitHubStats, theme: ThemeColors, startY: number, cardWidth: number, options: { showProfile?: boolean; showSummary?: boolean; showHeader?: boolean }): { svg: string; height: number } {
-  const { user, totalContributions } = stats;
+  const { user, totalContributions, contributionData } = stats;
   const name = escapeHtml(user.name || user.login);
   const login = escapeHtml(user.login);
   const location = user.location ? escapeHtml(user.location) : '';
-  const currentYear = new Date().getFullYear();
+  
+  // Determine the contribution period label based on actual contribution data
+  let contributionPeriodLabel = 'the last year';
+  if (contributionData && contributionData.length > 0) {
+    const firstDate = new Date(contributionData[0].date);
+    const lastDate = new Date(contributionData[contributionData.length - 1].date);
+    const firstYear = firstDate.getFullYear();
+    const lastYear = lastDate.getFullYear();
+    
+    // Check if data spans more than one calendar year
+    if (firstYear === lastYear) {
+      contributionPeriodLabel = `${lastYear}`;
+    } else {
+      // Check if it's roughly the last 12 months (rolling year)
+      const monthsDiff = (lastYear - firstYear) * 12 + (lastDate.getMonth() - firstDate.getMonth());
+      if (monthsDiff >= 11 && monthsDiff <= 13) {
+        contributionPeriodLabel = 'the last year';
+      } else {
+        contributionPeriodLabel = `${firstYear}-${lastYear}`;
+      }
+    }
+  }
   
   const showProfile = options.showProfile !== false;
   const showSummary = options.showSummary !== false;
@@ -94,8 +128,6 @@ function renderHeaderSection(stats: GitHubStats, theme: ThemeColors, startY: num
   if (!showProfile && !showSummary && !showHeader) {
     return { svg: '', height: 0 };
   }
-  
-  const contributionData = stats.contributionData;
   
   // Group by month for the area chart
   const monthlyData: { month: string; count: number }[] = [];
@@ -156,7 +188,7 @@ function renderHeaderSection(stats: GitHubStats, theme: ThemeColors, startY: num
   
   // Calculate summary section
   const summaryRows = showSummary ? [
-    { icon: 'fire', color: '#ff6b35', text: `${totalContributions.toLocaleString()} contributions in ${currentYear}` },
+    { icon: 'fire', color: '#ff6b35', text: `${totalContributions.toLocaleString()} contributions in ${contributionPeriodLabel}` },
     { icon: 'repo', color: theme.accent, text: `${user.repositories.totalCount} public repositories` },
     { icon: 'calendar', color: '#9ca3af', text: `Joined GitHub ${getYearsAgo(stats.accountCreatedAt)}` },
     ...(location ? [{ icon: 'pin', color: '#10b981', text: location }] : [])
@@ -171,8 +203,8 @@ function renderHeaderSection(stats: GitHubStats, theme: ThemeColors, startY: num
   
   // Summary section SVG
   const summarySvg = showSummary ? `
-      <!-- Profile Stats - Left aligned -->
-      <g transform="translate(48, ${summaryStartY})">
+      <!-- Profile Stats - ${showBothSummaryAndHeader ? 'Left aligned' : 'Centered'} -->
+      <g transform="translate(${showBothSummaryAndHeader ? 48 : (cardWidth - 320) / 2}, ${summaryStartY})">
         ${summaryRows.map((row, index) => `
         <g transform="translate(0, ${index * 32})">
           ${renderIcon(row.icon as 'fire' | 'repo' | 'calendar' | 'pin', 0, -1, row.color, 18)}
@@ -241,23 +273,22 @@ function renderHeaderSection(stats: GitHubStats, theme: ThemeColors, startY: num
   return { svg, height: totalHeight };
 }
 
-function renderStatsCard(stats: GitHubStats, theme: ThemeColors, startY: number): { svg: string; height: number } {
+function renderStatsCard(stats: GitHubStats, theme: ThemeColors, startY: number, startX: number = 40): { svg: string; height: number } {
   const { user, totalStars, totalCommits, totalPRs, totalIssues, contributedRepos } = stats;
-  const currentYear = new Date().getFullYear();
   const { grade, color: gradeColor } = calculateGrade(stats);
 
   const statItems = [
     { icon: 'star' as const, label: 'Total Stars Earned', value: totalStars, color: '#fbbf24' },
-    { icon: 'commit' as const, label: `Commits (${currentYear})`, value: totalCommits, color: '#34d399' },
-    { icon: 'pr' as const, label: 'Pull Requests', value: totalPRs, color: '#a78bfa' },
-    { icon: 'issue' as const, label: 'Issues', value: totalIssues, color: '#f472b6' },
+    { icon: 'commit' as const, label: 'Commits (Last Year)', value: totalCommits, color: '#34d399' },
+    { icon: 'pr' as const, label: 'Pull Requests (Last Year)', value: totalPRs, color: '#a78bfa' },
+    { icon: 'issue' as const, label: 'Issues (Last Year)', value: totalIssues, color: '#f472b6' },
     { icon: 'fork' as const, label: 'Contributed To', value: contributedRepos, color: '#60a5fa' },
   ];
 
   let svg = `
     <!-- GitHub Stats Card -->
-    <g transform="translate(40, ${startY})">
-      <rect x="0" y="0" width="380" height="200" rx="14" fill="${theme.cardBackground}" stroke="${theme.border}" stroke-width="1"/>
+    <g transform="translate(${startX}, ${startY})">
+      <rect x="0" y="0" width="377" height="200" rx="14" fill="${theme.cardBackground}" stroke="${theme.border}" stroke-width="1"/>
       
       <!-- Card Title -->
       <g transform="translate(24, 28)">
@@ -313,7 +344,7 @@ function renderLanguagesCard(stats: GitHubStats, theme: ThemeColors, startY: num
     return { svg: '', height: 0 };
   }
 
-  const barWidth = 332;
+  const barWidth = 329;
   const barHeight = 12;
   const borderRadius = 6;
 
@@ -350,7 +381,7 @@ function renderLanguagesCard(stats: GitHubStats, theme: ThemeColors, startY: num
   let svg = `
     <!-- Languages Card -->
     <g transform="translate(${startX}, ${startY})">
-      <rect x="0" y="0" width="380" height="200" rx="14" fill="${theme.cardBackground}" stroke="${theme.border}" stroke-width="1"/>
+      <rect x="0" y="0" width="377" height="200" rx="14" fill="${theme.cardBackground}" stroke="${theme.border}" stroke-width="1"/>
       
       <!-- Card Title -->
       <g transform="translate(24, 28)">
@@ -482,7 +513,7 @@ function renderStreakSection(stats: GitHubStats, theme: ThemeColors, startY: num
           Current Streak
         </text>
         <text x="${cardWidth3 / 2}" y="126" text-anchor="middle" font-size="10" fill="${theme.textSecondary}" font-family="${FONT_FAMILY}" opacity="0.7" letter-spacing="0.2">
-          ${currentStreak.startDate ? `${formatDateShort(currentStreak.startDate)} - ${formatDateShort(currentStreak.endDate)}` : 'No active streak'}
+          ${currentStreak.startDate ? formatDateRange(currentStreak.startDate, currentStreak.endDate) : 'No active streak'}
         </text>
       </g>
       
@@ -501,7 +532,7 @@ function renderStreakSection(stats: GitHubStats, theme: ThemeColors, startY: num
           Longest Streak
         </text>
         <text x="${cardWidth3 / 2}" y="116" text-anchor="middle" font-size="10" fill="${theme.textSecondary}" font-family="${FONT_FAMILY}" opacity="0.7" letter-spacing="0.2">
-          ${longestStreak.startDate ? `${formatDateShort(longestStreak.startDate)} - ${formatDateShort(longestStreak.endDate)}` : 'N/A'}
+          ${longestStreak.startDate ? formatDateRange(longestStreak.startDate, longestStreak.endDate) : 'N/A'}
         </text>
       </g>
     </g>
@@ -525,10 +556,12 @@ function renderContributionLineGraph(stats: GitHubStats, theme: ThemeColors, sta
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   
   let monthLabel = '';
-  if (firstDate.getMonth() === lastDate.getMonth()) {
+  if (firstDate.getMonth() === lastDate.getMonth() && firstDate.getFullYear() === lastDate.getFullYear()) {
     monthLabel = `${months[firstDate.getMonth()]} ${firstDate.getFullYear()}`;
-  } else {
+  } else if (firstDate.getFullYear() === lastDate.getFullYear()) {
     monthLabel = `${months[firstDate.getMonth()].slice(0, 3)} - ${months[lastDate.getMonth()].slice(0, 3)} ${lastDate.getFullYear()}`;
+  } else {
+    monthLabel = `${months[firstDate.getMonth()].slice(0, 3)} ${firstDate.getFullYear()} - ${months[lastDate.getMonth()].slice(0, 3)} ${lastDate.getFullYear()}`;
   }
   
   const innerWidth = cardWidth - 80;
@@ -616,30 +649,39 @@ export function generateInsightCard(stats: GitHubStats, options: CardOptions): s
     showSummary: options.showSummary,
     showHeader: options.showHeader,
   });
-  currentY += headerSection.height + (headerSection.height > 0 ? 20 : 0);
+  currentY += headerSection.height + (headerSection.height > 0 ? 3 : 0);
 
   // Stats and Languages side by side
   const showStats = options.showStats !== false;
   const showLanguages = options.showLanguages !== false;
   
+  // Calculate positioning based on which cards are shown
+  let statsStartX = 40;
+  let languagesStartX = 433;
+  
+  // Center card if only one is shown
+  if (showStats && !showLanguages) {
+    statsStartX = (cardWidth - 377) / 2; // Center stats card
+  } else if (!showStats && showLanguages) {
+    languagesStartX = (cardWidth - 377) / 2; // Center languages card
+  }
+  
   const statsCard = showStats 
-    ? renderStatsCard(stats, theme, currentY)
+    ? renderStatsCard(stats, theme, currentY, statsStartX)
     : { svg: '', height: 0 };
   
-  // Adjust languages card position based on whether stats card is shown
-  const languagesStartX = showStats ? 430 : 40;
   const languagesCard = showLanguages 
     ? renderLanguagesCard(stats, theme, currentY, languagesStartX) 
     : { svg: '', height: 0 };
   
   const statsAndLangsHeight = Math.max(statsCard.height, languagesCard.height);
-  currentY += statsAndLangsHeight + (statsAndLangsHeight > 0 ? 20 : 0);
+  currentY += statsAndLangsHeight + (statsAndLangsHeight > 0 ? 3 : 0);
 
   // Streak section
   const streakSection = options.showStreak !== false 
     ? renderStreakSection(stats, theme, currentY, cardWidth) 
     : { svg: '', height: 0 };
-  currentY += streakSection.height + (streakSection.height > 0 ? 20 : 0);
+  currentY += streakSection.height + (streakSection.height > 0 ? 3 : 0);
 
   // Contribution graph
   const graphSection = options.showGraph !== false 

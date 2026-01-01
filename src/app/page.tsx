@@ -41,8 +41,14 @@ const Icons = {
     </svg>
   ),
   alert: (
-    <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" style={{ display: 'block' }}>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ display: 'block' }}>
       <path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"/>
+    </svg>
+  ),
+  download: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ display: 'block' }}>
+      <path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/>
+      <path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06l1.97 1.969Z"/>
     </svg>
   ),
 };
@@ -90,8 +96,10 @@ export default function Home() {
   const [refreshKey, setRefreshKey] = useState(Date.now());
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   
-  // Close icon for input clear button
+  // Ref for the username input field
+  const usernameInputRef = useRef<HTMLInputElement>(null);
   const CloseIcon = (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ display: 'block' }}>
       <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"/>
@@ -120,8 +128,34 @@ export default function Home() {
     if (username.trim()) {
       setIsGenerating(true);
       setHasError(false);
+      setHasLoaded(false);
       setGeneratedUsername(username.trim());
       setRefreshKey(Date.now());
+      
+      // Check if API returns success before showing download buttons
+      const checkUrl = `/api/insight?username=${username.trim()}&theme=${selectedTheme}&graph=${showGraph}&languages=${showLanguages}&streak=${showStreak}&stats=${showStats}&header=${showHeader}&summary=${showSummary}&profile=${showProfile}&_t=${Date.now()}`;
+      fetch(checkUrl)
+        .then(response => {
+          if (response.ok) {
+            setHasLoaded(true);
+            setIsGenerating(false);
+          } else {
+            setHasError(true);
+            setIsGenerating(false);
+          }
+        })
+        .catch(() => {
+          setHasError(true);
+          setIsGenerating(false);
+        });
+      
+      // Smooth scroll to preview section
+      setTimeout(() => {
+        const previewSection = document.getElementById('preview-section');
+        if (previewSection) {
+          previewSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
     }
   };
 
@@ -154,6 +188,62 @@ export default function Home() {
       copyTimeoutRef.current = null;
     }, 2000);
   }, []);
+
+  const downloadImage = useCallback(async (format: 'png' | 'jpg' | 'svg') => {
+    if (!generatedUsername || hasError) return;
+    
+    try {
+      const response = await fetch(`${previewUrl}&_t=${refreshKey}`);
+      const svgText = await response.text();
+      
+      if (format === 'svg') {
+        // Download as SVG
+        const blob = new Blob([svgText], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `github-insights-${generatedUsername}.svg`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // Convert SVG to PNG or JPG using canvas
+        const img = new Image();
+        const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+        const svgUrl = URL.createObjectURL(svgBlob);
+        
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * 2; // 2x for better quality
+          canvas.height = img.height * 2;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.scale(2, 2);
+            if (format === 'jpg') {
+              ctx.fillStyle = '#0d1117'; // Dark background for JPG
+              ctx.fillRect(0, 0, img.width, img.height);
+            }
+            ctx.drawImage(img, 0, 0);
+            
+            const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+            canvas.toBlob((blob) => {
+              if (blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `github-insights-${generatedUsername}.${format}`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }
+            }, mimeType, 0.95);
+          }
+          URL.revokeObjectURL(svgUrl);
+        };
+        img.src = svgUrl;
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  }, [generatedUsername, hasError, previewUrl, refreshKey]);
 
   // Google Sans Flex font stack
   const fontFamily = "'Google Sans', 'Google Sans Text', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
@@ -257,8 +347,9 @@ export default function Home() {
                 GitHub Username
               </label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: '300px', minWidth: '150px' }}>
+                <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '150px' }}>
                   <input
+                    ref={usernameInputRef}
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -266,7 +357,7 @@ export default function Home() {
                     placeholder="Enter username"
                     style={{
                       width: '100%',
-                      padding: '5px 32px 5px 12px',
+                      padding: '8px 32px 8px 12px',
                       fontSize: '14px',
                       fontFamily,
                       lineHeight: '20px',
@@ -288,7 +379,13 @@ export default function Home() {
                   />
                   {username && (
                     <button
-                      onClick={() => setUsername('')}
+                      onClick={() => {
+                        setUsername('');
+                        // Focus the input field after clearing
+                        setTimeout(() => {
+                          usernameInputRef.current?.focus();
+                        }, 0);
+                      }}
                       style={{
                         position: 'absolute',
                         right: '6px',
@@ -322,7 +419,7 @@ export default function Home() {
                   onClick={handleGenerate}
                   disabled={!username.trim()}
                   style={{
-                    padding: '5px 16px',
+                    padding: '8px 16px',
                     fontSize: '14px',
                     fontWeight: 600,
                     fontFamily,
@@ -334,6 +431,7 @@ export default function Home() {
                     cursor: !username.trim() ? 'not-allowed' : 'pointer',
                     transition: 'all 0.15s ease',
                     whiteSpace: 'nowrap',
+                    flex: '0 0 auto',
                   }}
                   onMouseOver={(e) => {
                     if (username.trim()) {
@@ -376,7 +474,7 @@ export default function Home() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '5px 12px',
+                      padding: '8px 12px',
                       fontSize: '12px',
                       fontWeight: 500,
                       fontFamily,
@@ -401,11 +499,23 @@ export default function Home() {
                     <span style={{
                       width: '14px',
                       height: '14px',
-                      borderRadius: '3px',
-                      background: `linear-gradient(135deg, ${theme.bgColor} 50%, ${theme.accentColor} 50%)`,
-                      border: `1px solid ${colors.borderDefault}`,
+                      borderRadius: '2px',
+                      backgroundColor: theme.bgColor,
+                      border: `2px solid ${theme.accentColor}`,
                       flexShrink: 0,
-                    }} />
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}>
+                      <span style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '40%',
+                        backgroundColor: theme.accentColor,
+                        opacity: 0.3,
+                      }} />
+                    </span>
                     {theme.name}
                   </button>
                 ))}
@@ -431,8 +541,8 @@ export default function Home() {
               }}>
                 {[
                   { id: 'profile', label: 'Name & Username', checked: showProfile, onChange: setShowProfile },
-                  { id: 'header', label: 'Monthly Chart', checked: showHeader, onChange: setShowHeader },
                   { id: 'summary', label: 'Summary Info', checked: showSummary, onChange: setShowSummary },
+                  { id: 'header', label: 'Monthly Chart', checked: showHeader, onChange: setShowHeader },
                   { id: 'stats', label: 'GitHub Stats', checked: showStats, onChange: setShowStats },
                   { id: 'languages', label: 'Top Languages', checked: showLanguages, onChange: setShowLanguages },
                   { id: 'streak', label: 'Streak Stats', checked: showStreak, onChange: setShowStreak },
@@ -470,25 +580,63 @@ export default function Home() {
         </div>
 
         {/* Preview Section */}
-        <div style={{ marginBottom: '24px' }}>
+        <div id="preview-section" style={{ marginBottom: '24px' }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            justifyContent: 'space-between',
             marginBottom: '12px',
             paddingBottom: '8px',
             borderBottom: `1px solid ${colors.borderMuted}`,
           }}>
-            <span style={{ color: colors.fgMuted, display: 'flex' }}>{Icons.eye}</span>
-            <h2 style={{
-              fontSize: '14px',
-              fontWeight: 600,
-              color: colors.fgDefault,
-              margin: 0,
-              fontFamily,
-            }}>
-              Preview
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: colors.fgMuted, display: 'flex' }}>{Icons.eye}</span>
+              <h2 style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: colors.fgDefault,
+                margin: 0,
+                fontFamily,
+              }}>
+                Preview
+              </h2>
+            </div>
+            
+            {/* Download buttons */}
+            {generatedUsername && !hasError && !isGenerating && hasLoaded && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {(['svg', 'png', 'jpg'] as const).map((format) => (
+                  <button
+                    key={format}
+                    onClick={() => downloadImage(format)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 10px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      fontFamily,
+                      color: colors.fgDefault,
+                      backgroundColor: colors.canvasSubtle,
+                      border: `1px solid ${colors.borderDefault}`,
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = colors.borderMuted;
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = colors.canvasSubtle;
+                    }}
+                  >
+                    {Icons.download}
+                    {format.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           <div style={{
@@ -546,7 +694,8 @@ export default function Home() {
                       margin: '0 auto 12px',
                     }} />
                     <span style={{ color: colors.fgMuted, fontFamily }}>
-                      Generating preview for <strong style={{ color: colors.fgDefault }}>{generatedUsername}</strong>...
+                      Generating preview for <strong style={{ color: colors.fgDefault }}>{generatedUsername}</strong>...<br />
+                      <span style={{ fontSize: '12px', color: colors.fgSubtle }}>This may take a while</span>
                     </span>
                     <style>{`
                       @keyframes spin {
@@ -560,17 +709,24 @@ export default function Home() {
                     textAlign: 'center',
                     padding: '40px 20px',
                   }}>
-                    <div style={{ color: colors.dangerFg, marginBottom: '16px' }}>
-                      {Icons.alert}
-                    </div>
                     <div style={{
-                      fontSize: '16px',
-                      fontWeight: 600,
-                      color: colors.dangerFg,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
                       marginBottom: '8px',
-                      fontFamily,
                     }}>
-                      User not found
+                      <div style={{ color: colors.dangerFg }}>
+                        {Icons.alert}
+                      </div>
+                      <div style={{
+                        fontSize: '16px',
+                        fontWeight: 600,
+                        color: colors.dangerFg,
+                        fontFamily,
+                      }}>
+                        User not found
+                      </div>
                     </div>
                     <div style={{
                       fontSize: '14px',
@@ -592,10 +748,13 @@ export default function Home() {
                       opacity: isGenerating ? 0.3 : 1,
                       transition: 'opacity 0.3s ease',
                     }}
-                    onLoad={() => setIsGenerating(false)}
+                    onLoad={() => {
+                      // Loading state is managed by the fetch check
+                    }}
                     onError={() => {
                       setIsGenerating(false);
                       setHasError(true);
+                      setHasLoaded(false);
                     }}
                   />
                 )}
@@ -604,8 +763,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Embed Code Section - Only show when username is generated and no error */}
-        {generatedUsername && !hasError && (
+        {/* Embed Code Section - Only show when username is generated, no error, and loaded */}
+        {generatedUsername && !hasError && hasLoaded && (
         <div style={{ marginBottom: '24px' }}>
           <div style={{
             display: 'flex',
@@ -774,6 +933,33 @@ export default function Home() {
         }}>
           <p style={{
             margin: 0,
+            fontSize: '14px',
+            color: colors.fgDefault,
+            fontFamily,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            fontWeight: 500,
+          }}>
+            Free and open source •{' '}
+            <a
+              href="https://github.com/nishatrhythm/GitHub-Insights"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: colors.accentFg,
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+              onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
+            >
+              Contribute on GitHub
+            </a>
+          </p>
+          <p style={{
+            margin: '8px 0 0 0',
             fontSize: '14px',
             color: colors.fgMuted,
             fontFamily,

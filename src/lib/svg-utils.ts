@@ -91,23 +91,24 @@ export function getContributionLevel(count: number): number {
 
 export function generateAnimationStyles(theme: ThemeColors): string {
   return `
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&amp;display=swap');
-      @import url('https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;500;700&amp;display=swap');
-      
-      .card-text {
-        font-family: 'Google Sans Flex', 'Google Sans', 'Product Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      }
-      
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes slideIn {
-        from { opacity: 0; transform: translateX(-10px); }
-        to { opacity: 1; transform: translateX(0); }
-      }
-      @keyframes pulse {
+    <defs>
+      <style type="text/css">
+        <![CDATA[
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+          
+          .card-text {
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+          }
+          
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+          @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.7; }
       }
@@ -126,7 +127,9 @@ export function generateAnimationStyles(theme: ThemeColors): string {
       .animate-rank { animation: rankPulse 2s ease-in-out infinite; }
       .stat-item { animation: fadeIn 0.5s ease-out forwards; }
       .lang-bar { animation: slideIn 0.8s ease-out forwards; }
-    </style>
+        ]]>
+      </style>
+    </defs>
   `;
 }
 

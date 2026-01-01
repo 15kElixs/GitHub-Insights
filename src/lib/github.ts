@@ -68,6 +68,7 @@ async function fetchYearContributions(username: string, year: number, token: str
       user(login: $username) {
         contributionsCollection(from: $from, to: $to) {
           contributionCalendar {
+            totalContributions
             weeks {
               contributionDays {
                 contributionCount
@@ -108,6 +109,43 @@ async function fetchYearContributions(username: string, year: number, token: str
   return weeks.flatMap((week: { contributionDays: ContributionDay[] }) => week.contributionDays);
 }
 
+async function fetchYearTotalContributions(username: string, year: number, token: string): Promise<number> {
+  const query = `
+    query($username: String!, $from: DateTime!, $to: DateTime!) {
+      user(login: $username) {
+        contributionsCollection(from: $from, to: $to) {
+          contributionCalendar {
+            totalContributions
+          }
+        }
+      }
+    }
+  `;
+
+  const from = `${year}-01-01T00:00:00Z`;
+  const to = `${year}-12-31T23:59:59Z`;
+
+  const response = await fetch(GITHUB_GRAPHQL_API, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+      variables: { username, from, to },
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (data.errors) {
+    return 0;
+  }
+
+  return data.data?.user?.contributionsCollection?.contributionCalendar?.totalContributions || 0;
+}
+
 function calculateStreaks(contributionDays: ContributionDay[]): { current: StreakInfo; longest: StreakInfo } {
   const emptyStreak: StreakInfo = { count: 0, startDate: '', endDate: '' };
   if (!contributionDays.length) return { current: emptyStreak, longest: emptyStreak };
@@ -117,21 +155,54 @@ function calculateStreaks(contributionDays: ContributionDay[]): { current: Strea
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
-  // Find all streaks
+  // Remove duplicate dates and keep only unique days
+  const uniqueDays: ContributionDay[] = [];
+  const seenDates = new Set<string>();
+  for (const day of sortedDays) {
+    if (!seenDates.has(day.date)) {
+      seenDates.add(day.date);
+      uniqueDays.push(day);
+    }
+  }
+
+  // Find all streaks - must check for consecutive days
   const streaks: StreakInfo[] = [];
   let currentStreakStart = '';
   let currentStreakEnd = '';
   let currentStreakCount = 0;
+  let lastDate: Date | null = null;
 
-  for (let i = 0; i < sortedDays.length; i++) {
-    const day = sortedDays[i];
+  for (let i = 0; i < uniqueDays.length; i++) {
+    const day = uniqueDays[i];
+    const dayDate = new Date(day.date);
+    dayDate.setHours(0, 0, 0, 0);
+    
+    // Check if this day is consecutive to the last day
+    let isConsecutive = false;
+    if (lastDate) {
+      const expectedDate = new Date(lastDate);
+      expectedDate.setDate(expectedDate.getDate() + 1);
+      isConsecutive = dayDate.getTime() === expectedDate.getTime();
+    }
     
     if (day.contributionCount > 0) {
-      if (currentStreakCount === 0) {
+      if (currentStreakCount === 0 || !isConsecutive) {
+        // Start a new streak
+        if (currentStreakCount > 0) {
+          // Save the previous streak
+          streaks.push({
+            count: currentStreakCount,
+            startDate: currentStreakStart,
+            endDate: currentStreakEnd
+          });
+        }
         currentStreakStart = day.date;
+        currentStreakCount = 1;
+      } else {
+        // Continue the streak
+        currentStreakCount++;
       }
       currentStreakEnd = day.date;
-      currentStreakCount++;
     } else {
       if (currentStreakCount > 0) {
         streaks.push({
@@ -142,6 +213,7 @@ function calculateStreaks(contributionDays: ContributionDay[]): { current: Strea
         currentStreakCount = 0;
       }
     }
+    lastDate = dayDate;
   }
 
   // Don't forget the last streak if it ends at the last day
@@ -324,8 +396,22 @@ export async function fetchGitHubStats(username: string): Promise<GitHubStats> {
     const streaks = calculateStreaks(allContributionDays);
     const languages = calculateLanguageStats(user.repositories.nodes);
     
-    // Use current year total only (faster, skip fetching all historical years)
-    const totalContributionsAllTime = user.contributionsCollection.contributionCalendar.totalContributions;
+    // Calculate all-time contributions by fetching each year's total
+    // We already have current rolling year total, fetch remaining years in parallel
+    let totalContributionsAllTime = user.contributionsCollection.contributionCalendar.totalContributions;
+    
+    // Get contributions from previous years (not included in rolling 12 months)
+    const pastYears = years.filter(y => y < currentYear);
+    if (pastYears.length > 0) {
+      try {
+        const yearTotals = await Promise.all(
+          pastYears.map(year => fetchYearTotalContributions(username, year, token))
+        );
+        totalContributionsAllTime += yearTotals.reduce((sum, total) => sum + total, 0);
+      } catch {
+        // Continue with just current year data if fetching fails
+      }
+    }
 
     const { rank, percentile } = calculateRank({
       commits: user.contributionsCollection.totalCommitContributions,
