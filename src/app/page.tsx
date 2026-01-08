@@ -996,6 +996,21 @@ export default function Home() {
             >
               nishatrhythm
             </a>
+            {' '}and{' '}
+            <a
+              href="https://github.com/nishatrhythm/GitHub-Insights/graphs/contributors"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: colors.accentFg,
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+              onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
+            >
+              other contributors
+            </a>
           </p>
         </footer>
       </div>

@@ -156,5 +156,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <p align="center">
   <strong>Free and open source</strong><br>
-  Made with ❤️ by <a href="https://github.com/nishatrhythm">nishatrhythm</a>
+  Made with ❤️ by <a href="https://github.com/nishatrhythm">nishatrhythm</a> and <a href="https://github.com/nishatrhythm/GitHub-Insights/graphs/contributors">other contributors</a>
 </p>
