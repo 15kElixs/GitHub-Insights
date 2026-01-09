@@ -29,6 +29,13 @@ export default function RootLayout({
           pre, code, .mono {
             font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace !important;
           }
+          
+          @media (max-width: 768px) {
+            footer p {
+              display: block !important;
+              text-align: center !important;
+            }
+          }
         `}} />
       </head>
       <body style={{ 
