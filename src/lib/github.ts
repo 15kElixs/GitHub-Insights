@@ -148,6 +148,93 @@ async function fetchYearTotalContributions(username: string, year: number, token
   return data.data?.user?.contributionsCollection?.contributionCalendar?.totalContributions || 0;
 }
 
+// Fetch contribution days for current year from Jan 1 to today (non-overlapping)
+async function fetchCurrentYearContributionDays(username: string, token: string): Promise<ContributionDay[]> {
+  const query = `
+    query($username: String!, $from: DateTime!, $to: DateTime!) {
+      user(login: $username) {
+        contributionsCollection(from: $from, to: $to) {
+          contributionCalendar {
+            weeks {
+              contributionDays {
+                contributionCount
+                date
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const from = `${currentYear}-01-01T00:00:00Z`;
+  const to = now.toISOString();
+
+  const response = await fetch(GITHUB_GRAPHQL_API, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+      variables: { username, from, to },
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (data.errors) {
+    return [];
+  }
+
+  const weeks = data.data?.user?.contributionsCollection?.contributionCalendar?.weeks || [];
+  return weeks.flatMap((week: { contributionDays: ContributionDay[] }) => week.contributionDays);
+}
+
+// Fetch contributions for the current year from Jan 1 to today (non-overlapping with past years)
+async function fetchCurrentYearContributions(username: string, token: string): Promise<number> {
+  const query = `
+    query($username: String!, $from: DateTime!, $to: DateTime!) {
+      user(login: $username) {
+        contributionsCollection(from: $from, to: $to) {
+          contributionCalendar {
+            totalContributions
+          }
+        }
+      }
+    }
+  `;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const from = `${currentYear}-01-01T00:00:00Z`;
+  // Use current date/time as the end
+  const to = now.toISOString();
+
+  const response = await fetch(GITHUB_GRAPHQL_API, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+      variables: { username, from, to },
+    }),
+  });
+
+  const data = await response.json();
+  
+  if (data.errors) {
+    return 0;
+  }
+
+  return data.data?.user?.contributionsCollection?.contributionCalendar?.totalContributions || 0;
+}
+
 function calculateStreaks(contributionDays: ContributionDay[]): { current: StreakInfo; longest: StreakInfo } {
   const emptyStreak: StreakInfo = { count: 0, startDate: '', endDate: '' };
   if (!contributionDays.length) return { current: emptyStreak, longest: emptyStreak };
@@ -376,43 +463,66 @@ export async function fetchGitHubStats(username: string): Promise<GitHubStats> {
     const totalStars = user.repositories.nodes.reduce((sum, repo) => sum + repo.stargazerCount, 0);
     const totalForks = user.repositories.nodes.reduce((sum, repo) => sum + repo.forkCount, 0);
 
-    // Get contribution data for current year
+    // Get contribution years from API
     const currentYear = new Date().getFullYear();
-    const contributionDays = user.contributionsCollection.contributionCalendar.weeks
-      .flatMap(week => week.contributionDays);
-
-    // Fetch previous year in parallel for streak calculation (only 1 extra request)
     const years = user.contributionsCollection.contributionYears || [currentYear];
-    let allContributionDays = [...contributionDays];
-
-    // Only fetch previous year if needed, in parallel
-    if (years.includes(currentYear - 1)) {
-      try {
+    
+    // For streak calculation, we need contribution days using NON-OVERLAPPING date ranges
+    // to avoid duplicate days. The rolling ~1-year window from the main query overlaps
+    // with the previous year, so we fetch current year (Jan 1 to today) and previous year
+    // (full calendar year) separately.
+    let allContributionDays: ContributionDay[] = [];
+    
+    try {
+      // Fetch current year (Jan 1 to today) for streak calculation
+      const currentYearDays = await fetchCurrentYearContributionDays(username, token);
+      allContributionDays = [...currentYearDays];
+      
+      // Fetch previous year if user has contributions in that year
+      if (years.includes(currentYear - 1)) {
         const prevYearDays = await fetchYearContributions(username, currentYear - 1, token);
         allContributionDays = [...allContributionDays, ...prevYearDays];
-      } catch {
-        // Continue without previous year data if it fails
       }
+    } catch {
+      // Fallback to rolling window data if fetching fails (less accurate but functional)
+      allContributionDays = user.contributionsCollection.contributionCalendar.weeks
+        .flatMap(week => week.contributionDays);
     }
+    
+    // Use the rolling window data for the contribution graph display
+    // (this is the expected behavior - shows last ~12 months of activity)
+    const contributionDays = user.contributionsCollection.contributionCalendar.weeks
+      .flatMap(week => week.contributionDays);
 
     const streaks = calculateStreaks(allContributionDays);
     const languages = calculateLanguageStats(user.repositories.nodes);
     
-    // Calculate all-time contributions by fetching each year's total
-    // We already have current rolling year total, fetch remaining years in parallel
-    let totalContributionsAllTime = user.contributionsCollection.contributionCalendar.totalContributions;
+    // Calculate all-time contributions using NON-OVERLAPPING date ranges
+    // to avoid double-counting that occurs when using the rolling ~1-year total.
+    // 
+    // The rolling total from contributionCalendar.totalContributions covers
+    // approximately the last 365 days, which overlaps with part of the previous year.
+    // Instead, we fetch:
+    // 1. Current year: Jan 1 to today (partial year)
+    // 2. Past years: Full calendar years (Jan 1 - Dec 31)
+    // This ensures no overlap and accurate lifetime totals.
     
-    // Get contributions from previous years (not included in rolling 12 months)
+    let totalContributionsAllTime = 0;
+    
+    // Get past years (full calendar years, excluding current year)
     const pastYears = years.filter(y => y < currentYear);
-    if (pastYears.length > 0) {
-      try {
-        const yearTotals = await Promise.all(
-          pastYears.map(year => fetchYearTotalContributions(username, year, token))
-        );
-        totalContributionsAllTime += yearTotals.reduce((sum, total) => sum + total, 0);
-      } catch {
-        // Continue with just current year data if fetching fails
-      }
+    
+    try {
+      // Fetch current year (Jan 1 to today) and all past years in parallel
+      const [currentYearTotal, ...pastYearTotals] = await Promise.all([
+        fetchCurrentYearContributions(username, token),
+        ...pastYears.map(year => fetchYearTotalContributions(username, year, token))
+      ]);
+      
+      totalContributionsAllTime = currentYearTotal + pastYearTotals.reduce((sum, total) => sum + total, 0);
+    } catch {
+      // Fallback to rolling total if fetching fails (less accurate but better than nothing)
+      totalContributionsAllTime = user.contributionsCollection.contributionCalendar.totalContributions;
     }
 
     const { rank, percentile } = calculateRank({

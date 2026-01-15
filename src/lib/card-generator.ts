@@ -167,31 +167,9 @@ function renderHeaderSection(
   const login = escapeHtml(user.login);
   const location = user.location ? escapeHtml(user.location) : "";
 
-  // Determine the contribution period label based on actual contribution data
-  let contributionPeriodLabel = "the last year";
-  if (contributionData && contributionData.length > 0) {
-    const firstDate = new Date(contributionData[0].date);
-    const lastDate = new Date(
-      contributionData[contributionData.length - 1].date
-    );
-    const firstYear = firstDate.getFullYear();
-    const lastYear = lastDate.getFullYear();
-
-    // Check if data spans more than one calendar year
-    if (firstYear === lastYear) {
-      contributionPeriodLabel = `${lastYear}`;
-    } else {
-      // Check if it's roughly the last 12 months (rolling year)
-      const monthsDiff =
-        (lastYear - firstYear) * 12 +
-        (lastDate.getMonth() - firstDate.getMonth());
-      if (monthsDiff >= 11 && monthsDiff <= 13) {
-        contributionPeriodLabel = "the last year";
-      } else {
-        contributionPeriodLabel = `${firstYear}-${lastYear}`;
-      }
-    }
-  }
+  // GitHub's contribution calendar shows approximately the last 365-366 days (rolling year)
+  // not a calendar year, so we should label it as "the last 12 months" for accuracy
+  const contributionPeriodLabel = "the last 12 months";
 
   const showProfile = options.showProfile !== false;
   const showSummary = options.showSummary !== false;
@@ -413,19 +391,19 @@ function renderStatsCard(
     },
     {
       icon: "commit" as const,
-      label: "Commits (Last Year)",
+      label: "Total Commits",
       value: totalCommits,
       color: "#34d399",
     },
     {
       icon: "pr" as const,
-      label: "Pull Requests (Last Year)",
+      label: "Total Pull Requests",
       value: totalPRs,
       color: "#a78bfa",
     },
     {
       icon: "issue" as const,
-      label: "Issues (Last Year)",
+      label: "Total Issues",
       value: totalIssues,
       color: "#f472b6",
     },
